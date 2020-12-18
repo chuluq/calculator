@@ -31,11 +31,21 @@ keys.addEventListener('click', (e) => {
         // if non-zero number append it
         display.textContent = displayedNum + keyContent;
       }
+
+      // update data-previous-key-type
+      calculator.dataset.previousKeyType = 'number';
     }
 
     // decimal key
     if (action === 'decimal') {
-      display.textContent = displayedNum + '.';
+      // do nothing if string has a dot
+      if (!displayedNum.includes('.')) {
+        display.textContent = displayedNum + '.';
+      } else if (previousKeyType === 'operator') {
+        display.textContent = '0.';
+      }
+
+      calculator.dataset.previousKeyType = 'decimal';
     }
 
     // higlight operator key when click
@@ -45,12 +55,25 @@ keys.addEventListener('click', (e) => {
       action === 'multiply' ||
       action === 'divide'
     ) {
+      const firstValue = calculator.dataset.firstValue;
+      const operator = calculator.dataset.operator;
+      const secondValue = displayedNum;
+
+      // only check firstValue since secondValue always exists
+      if (firstValue && operator && previousKeyType !== 'operator') {
+        const calcValue = calculate(firstValue, operator, secondValue);
+        display.textContent = calcValue;
+
+        // Update calculated value as firstValue
+        calculator.dataset.firstValue = calcValue;
+      } else {
+        // If there are no calculations, set displayedNum as the firstValue
+        calculator.dataset.firstValue = displayedNum;
+      }
+
       key.classList.add('is-depressed');
       // Add custom attribute
       calculator.dataset.previousKeyType = 'operator';
-
-      // save first number
-      calculator.dataset.firstValue = displayedNum;
       calculator.dataset.operator = action;
     }
 
@@ -61,6 +84,14 @@ keys.addEventListener('click', (e) => {
       const secondValue = displayedNum;
 
       display.textContent = calculate(firstValue, operator, secondValue);
+
+      calculator.dataset.previousKeyType = 'operator';
+    }
+
+    // clear
+    if (action == -'clear') {
+      // ...
+      calculator.dataset.previousKeyType = 'clear';
     }
   }
 });
