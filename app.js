@@ -77,15 +77,24 @@ keys.addEventListener('click', (e) => {
       calculator.dataset.operator = action;
     }
 
-    // calculate number
+    // equal key
     if (action === 'calculate') {
-      const firstValue = calculator.dataset.firstValue;
+      let firstValue = calculator.dataset.firstValue;
       const operator = calculator.dataset.operator;
-      const secondValue = displayedNum;
+      let secondValue = displayedNum;
 
-      display.textContent = calculate(firstValue, operator, secondValue);
+      if (firstValue) {
+        if (previousKeyType === 'calculate') {
+          firstValue = displayedNum;
+          secondValue = calculator.dataset.modValue;
+        }
 
-      calculator.dataset.previousKeyType = 'operator';
+        display.textContent = calculate(firstValue, operator, secondValue);
+      }
+
+      // Set modValue attribute
+      calculator.dataset.modValue = secondValue;
+      calculator.dataset.previousKeyType = 'calculate';
     }
 
     // clear
