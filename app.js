@@ -3,6 +3,22 @@ const calculator = document.querySelector('.calculator');
 const keys = document.querySelector('.calculator__keys');
 const display = document.querySelector('.calculator__display');
 
+const calculate = (n1, operator, n2) => {
+  let result = '';
+
+  if (operator === 'add') {
+    result = parseFloat(n1) + parseFloat(n2);
+  } else if (operator === 'subtract') {
+    result = parseFloat(n1) - parseFloat(n2);
+  } else if (operator === 'multiply') {
+    result = parseFloat(n1) * parseFloat(n2);
+  } else if (operator === 'divide') {
+    result = parseFloat(n1) / parseFloat(n2);
+  }
+
+  return result;
+};
+
 // show number in display
 keys.addEventListener('click', (e) => {
   if (e.target.matches('button')) {
@@ -25,7 +41,11 @@ keys.addEventListener('click', (e) => {
       // if calculator shows 0
       // replace display with textContent of clicked key
       // update display after click operator key
-      if (displayedNum === '0' || previousKeyType === 'operator') {
+      if (
+        displayedNum === '0' ||
+        previousKeyType === 'operator' ||
+        previousKeyType === 'calculate'
+      ) {
         display.textContent = keyContent;
       } else {
         // if non-zero number append it
@@ -41,7 +61,10 @@ keys.addEventListener('click', (e) => {
       // do nothing if string has a dot
       if (!displayedNum.includes('.')) {
         display.textContent = displayedNum + '.';
-      } else if (previousKeyType === 'operator') {
+      } else if (
+        previousKeyType === 'operator' ||
+        previousKeyType === 'calculate'
+      ) {
         display.textContent = '0.';
       }
 
@@ -60,7 +83,12 @@ keys.addEventListener('click', (e) => {
       const secondValue = displayedNum;
 
       // only check firstValue since secondValue always exists
-      if (firstValue && operator && previousKeyType !== 'operator') {
+      if (
+        firstValue &&
+        operator &&
+        previousKeyType !== 'operator' &&
+        previousKeyType !== 'calculate'
+      ) {
         const calcValue = calculate(firstValue, operator, secondValue);
         display.textContent = calcValue;
 
@@ -97,26 +125,23 @@ keys.addEventListener('click', (e) => {
       calculator.dataset.previousKeyType = 'calculate';
     }
 
-    // clear
-    if (action == -'clear') {
-      // ...
+    if (action === 'clear') {
+      if (key.textContent === 'AC') {
+        calculator.dataset.firstValue = '';
+        calculator.dataset.modValue = '';
+        calculator.dataset.operator = '';
+        calculator.dataset.previousKeyType = '';
+      } else {
+        key.textContent = 'AC';
+      }
+
+      display.textContent = 0;
       calculator.dataset.previousKeyType = 'clear';
+    }
+
+    if (action !== 'clear') {
+      const clearButton = calculator.querySelector('[data-action=clear]');
+      clearButton.textContent = 'CE';
     }
   }
 });
-
-const calculate = (n1, operator, n2) => {
-  let result = '';
-
-  if (operator === 'add') {
-    result = parseFloat(n1) + parseFloat(n2);
-  } else if (operator === 'subtract') {
-    result = parseFloat(n1) - parseFloat(n2);
-  } else if (operator === 'multiply') {
-    result = parseFloat(n1) * parseFloat(n2);
-  } else if (operator === 'divide') {
-    result = parseFloat(n1) / parseFloat(n2);
-  }
-
-  return result;
-};
