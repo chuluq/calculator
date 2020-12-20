@@ -1,147 +1,142 @@
+const calculate = (n1, operator, n2) => {
+  const firstNum = parseFloat(n1);
+  const secondNum = parseFloat(n2);
+
+  if (operator === 'add') return firstNum + secondNum;
+  if (operator === 'subtract') return firstNum - secondNum;
+  if (operator === 'multiply') return firstNum * secondNum;
+  if (operator === 'divide') return firstNum / secondNum;
+};
+
+const getKeyType = (key) => {
+  const { action } = key.dataset;
+  if (!action) return 'number';
+  if (
+    action === 'add' ||
+    action === 'subtract' ||
+    action === 'multiply' ||
+    action === 'divide'
+  )
+    return 'operator';
+  // For everything else, return the action
+  return action;
+};
+
+const createResultString = (key, displayedNum, state) => {
+  const keyType = getKeyType(key);
+  const keyContent = key.textContent;
+  const { firstValue, modValue, operator, previousKeyType } = state;
+
+  if (keyType === 'number') {
+    return displayedNum === '0' ||
+      previousKeyType === 'operator' ||
+      previousKeyType === 'calculate'
+      ? keyContent // shows number
+      : displayedNum + keyContent; // if non-zero appends it
+  }
+
+  if (keyType === 'decimal') {
+    if (!displayedNum.includes('.')) return displayedNum + '.';
+    if (previousKeyType === 'operator' || previousKeyType === 'calculate')
+      return '0.';
+
+    return displayedNum;
+  }
+
+  if (keyType === 'operator') {
+    return firstValue &&
+      operator &&
+      previousKeyType !== 'operator' &&
+      previousKeyType !== 'calculate'
+      ? calculate(firstValue, operator, displayedNum)
+      : displayedNum;
+  }
+
+  if (keyType === 'clear') return 0;
+
+  if (keyType === 'calculate') {
+    if (firstValue) {
+      return previousKeyType === 'calculate'
+        ? calculate(displayedNum, operator, modValue)
+        : calculate(firstValue, operator, displayedNum);
+    } else {
+      return displayedNum;
+    }
+  }
+};
+
+const updateCalculatorState = (
+  key,
+  calculator,
+  calculatedValue,
+  displayedNum
+) => {
+  const keyType = getKeyType(key);
+  const {
+    firstValue,
+    operator,
+    modValue,
+    previousKeyType,
+  } = calculator.dataset;
+
+  calculator.dataset.previousKeyType = keyType;
+
+  if (keyType === 'operator') {
+    calculator.dataset.operator = key.dataset.action;
+    calculator.dataset.firstValue =
+      firstValue &&
+      operator &&
+      previousKeyType !== 'operator' &&
+      previousKeyType !== 'calculate'
+        ? calculatedValue
+        : displayedNum;
+  }
+
+  if (keyType === 'calculate') {
+    calculator.dataset.modValue =
+      firstValue && previousKeyType === 'calculate' ? modValue : displayedNum;
+  }
+
+  if (keyType === 'clear' && key.textContent === 'AC') {
+    calculator.dataset.firstValue = '';
+    calculator.dataset.modValue = '';
+    calculator.dataset.operator = '';
+    calculator.dataset.previousKeyType = '';
+  }
+};
+
+const updateVisualState = (key, calculator) => {
+  const keyType = getKeyType(key);
+  Array.from(key.parentNode.children).forEach((k) =>
+    k.classList.remove('is-depressed')
+  );
+
+  if (keyType === 'operator') key.classList.add('is-depressed');
+  if (keyType === 'clear' && key.textContent !== 'AC') {
+    key.textContent = 'AC';
+  }
+  if (keyType !== 'clear') {
+    const clearButton = calculator.querySelector('[data-action=clear]');
+    clearButton.textContent = 'CE';
+  }
+};
+
 // Listen event when key is pressed
 const calculator = document.querySelector('.calculator');
 const keys = document.querySelector('.calculator__keys');
 const display = document.querySelector('.calculator__display');
 
-const calculate = (n1, operator, n2) => {
-  let result = '';
-
-  if (operator === 'add') {
-    result = parseFloat(n1) + parseFloat(n2);
-  } else if (operator === 'subtract') {
-    result = parseFloat(n1) - parseFloat(n2);
-  } else if (operator === 'multiply') {
-    result = parseFloat(n1) * parseFloat(n2);
-  } else if (operator === 'divide') {
-    result = parseFloat(n1) / parseFloat(n2);
-  }
-
-  return result;
-};
-
-// show number in display
 keys.addEventListener('click', (e) => {
-  if (e.target.matches('button')) {
-    // determine type of key is clicked
-    // using data-action
-    const key = e.target;
-    const action = key.dataset.action;
-    const previousKeyType = calculator.dataset.previousKeyType;
-    const keyContent = key.textContent;
-    const displayedNum = display.textContent;
+  if (!e.target.matches('button')) return;
+  const key = e.target;
+  const displayedNum = display.textContent;
+  const resultString = createResultString(
+    key,
+    displayedNum,
+    calculator.dataset
+  );
 
-    // no action means no data-set
-    // number key
-    if (!action) {
-      // hits number key after an operator key
-      Array.from(key.parentNode.children).forEach((k) =>
-        k.classList.remove('is-depressed')
-      );
-
-      // if calculator shows 0
-      // replace display with textContent of clicked key
-      // update display after click operator key
-      if (
-        displayedNum === '0' ||
-        previousKeyType === 'operator' ||
-        previousKeyType === 'calculate'
-      ) {
-        display.textContent = keyContent;
-      } else {
-        // if non-zero number append it
-        display.textContent = displayedNum + keyContent;
-      }
-
-      // update data-previous-key-type
-      calculator.dataset.previousKeyType = 'number';
-    }
-
-    // decimal key
-    if (action === 'decimal') {
-      // do nothing if string has a dot
-      if (!displayedNum.includes('.')) {
-        display.textContent = displayedNum + '.';
-      } else if (
-        previousKeyType === 'operator' ||
-        previousKeyType === 'calculate'
-      ) {
-        display.textContent = '0.';
-      }
-
-      calculator.dataset.previousKeyType = 'decimal';
-    }
-
-    // higlight operator key when click
-    if (
-      action === 'add' ||
-      action === 'subtract' ||
-      action === 'multiply' ||
-      action === 'divide'
-    ) {
-      const firstValue = calculator.dataset.firstValue;
-      const operator = calculator.dataset.operator;
-      const secondValue = displayedNum;
-
-      // only check firstValue since secondValue always exists
-      if (
-        firstValue &&
-        operator &&
-        previousKeyType !== 'operator' &&
-        previousKeyType !== 'calculate'
-      ) {
-        const calcValue = calculate(firstValue, operator, secondValue);
-        display.textContent = calcValue;
-
-        // Update calculated value as firstValue
-        calculator.dataset.firstValue = calcValue;
-      } else {
-        // If there are no calculations, set displayedNum as the firstValue
-        calculator.dataset.firstValue = displayedNum;
-      }
-
-      key.classList.add('is-depressed');
-      // Add custom attribute
-      calculator.dataset.previousKeyType = 'operator';
-      calculator.dataset.operator = action;
-    }
-
-    // equal key
-    if (action === 'calculate') {
-      let firstValue = calculator.dataset.firstValue;
-      const operator = calculator.dataset.operator;
-      let secondValue = displayedNum;
-
-      if (firstValue) {
-        if (previousKeyType === 'calculate') {
-          firstValue = displayedNum;
-          secondValue = calculator.dataset.modValue;
-        }
-
-        display.textContent = calculate(firstValue, operator, secondValue);
-      }
-
-      // Set modValue attribute
-      calculator.dataset.modValue = secondValue;
-      calculator.dataset.previousKeyType = 'calculate';
-    }
-
-    if (action === 'clear') {
-      if (key.textContent === 'AC') {
-        calculator.dataset.firstValue = '';
-        calculator.dataset.modValue = '';
-        calculator.dataset.operator = '';
-        calculator.dataset.previousKeyType = '';
-      } else {
-        key.textContent = 'AC';
-      }
-
-      display.textContent = 0;
-      calculator.dataset.previousKeyType = 'clear';
-    }
-
-    if (action !== 'clear') {
-      const clearButton = calculator.querySelector('[data-action=clear]');
-      clearButton.textContent = 'CE';
-    }
-  }
+  display.textContent = resultString;
+  updateCalculatorState(key, calculator, resultString, displayedNum);
+  updateVisualState(key, calculator);
 });
