@@ -1,4 +1,5 @@
 # CALCULATOR
+[Preview](https://calculator-chuluq.netlify.app/)
 
 ## Practices
 
